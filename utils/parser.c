@@ -31,7 +31,7 @@ void string2packet(char* msg, struct message *packet) {
 	int idx, idx2;
     
     idx2 = (int) (strchr(msg, ':') - msg);
-    strncpy(temp, msg, 1);
+    strncpy(temp, msg, idx2);
     packet->type = atoi(temp);
     idx = idx2 + 1;
 	

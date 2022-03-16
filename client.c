@@ -29,14 +29,14 @@ const char* LIST_CMD = "/list";
 const char* QUIT_CMD = "/quit";
 bool insession = false;
 
-void *get_in_addr(struct sockaddr *sa) {
+void* get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
         return &(((struct sockaddr_in*)sa)->sin_addr);
 	}
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-void *receive(void* void_sockfd) {
+void* receive(void* void_sockfd) {
     // handle various ACKs and messages from server
 
     int* sockfd = (int*) void_sockfd;
@@ -74,7 +74,7 @@ void *receive(void* void_sockfd) {
                 fprintf(stdout, "%s:\t%s\n", packet.source, packet.data);
                 break;
             default:
-                fprintf(stderr, "Unexpected packet\n");
+                fprintf(stderr, "Unexpected packet %s\n", buf);
                 close(*sockfd);
                 *sockfd = -1;
                 return NULL;
@@ -144,7 +144,7 @@ void login(int* sockfd, pthread_t* recvthread) {
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
-    if ((numbytes = send(*sockfd, buf, BUF_SIZE, 0)) == -1) {
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         close(*sockfd);
         *sockfd = -1;
@@ -172,9 +172,9 @@ void login(int* sockfd, pthread_t* recvthread) {
         *sockfd = -1;
         return;
     } else {
-        fprintf(stderr, "Unexpected packet\n");
-        // close(*sockfd);
-        // *sockfd = -1;
+        fprintf(stderr, "Unexpected packet %s\n", buf);
+        close(*sockfd);
+        *sockfd = -1;
         return;
     }
 }
@@ -193,7 +193,7 @@ void logout(int* sockfd, pthread_t* recvthread) {
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
-    if ((numbytes = send(*sockfd, buf, BUF_SIZE, 0)) == -1) {
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         return;
     }
@@ -237,7 +237,7 @@ void joinsession(int* sockfd) {
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
-    if ((numbytes = send(*sockfd, buf, BUF_SIZE, 0)) == -1) {
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         return;
     }
@@ -262,7 +262,7 @@ void leavesession(int* sockfd) {
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
-    if ((numbytes = send(*sockfd, buf, BUF_SIZE, 0)) == -1) {
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         return;
     }
@@ -288,7 +288,7 @@ void createsession(int* sockfd) {
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
-    if ((numbytes = send(*sockfd, buf, BUF_SIZE, 0)) == -1) {
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         return;
     }
@@ -308,7 +308,7 @@ void list(int* sockfd) {
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
-    if ((numbytes = send(*sockfd, buf, BUF_SIZE, 0)) == -1) {
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         return;
     }
@@ -334,7 +334,7 @@ void send_text(int* sockfd, char* inputbuf) {
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
-    if ((numbytes = send(*sockfd, buf, BUF_SIZE, 0)) == -1) {
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         return;
     }
