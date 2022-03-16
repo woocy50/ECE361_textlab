@@ -17,6 +17,9 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include <sys/time.h>
+#include <pthread.h>
+
 #include "utils/parser.h"
 
 #define BACKLOG 10

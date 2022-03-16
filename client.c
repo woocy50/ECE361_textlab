@@ -17,6 +17,21 @@
 
 #include "utils/parser.h"
 
+const char* LOGIN_CMD = "/login";
+const char *LOGOUT_CMD = "/logout";
+const char *JOINSESSION_CMD = "/joinsession";
+const char *LEAVESESSION_CMD = "/leavesession";
+const char *CREATESESSION_CMD = "/createsession";
+const char *LIST_CMD = "/list";
+const char *QUIT_CMD = "/quit";
+
+void *get_in_addr(struct sockaddr *sa) {
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+	}
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 int main(int argc, char *argv[]) {
 	if (argc != 1) {
 		fprintf(stderr, "Invalid use\n");
