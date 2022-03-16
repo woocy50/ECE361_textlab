@@ -173,8 +173,8 @@ void login(int* sockfd, pthread_t* recvthread) {
         return;
     } else {
         fprintf(stderr, "Unexpected packet\n");
-        close(*sockfd);
-        *sockfd = -1;
+        // close(*sockfd);
+        // *sockfd = -1;
         return;
     }
 }
@@ -275,8 +275,8 @@ void createsession(int* sockfd) {
         return;
     }
     
-    if (!insession) {
-        fprintf(stderr, "Currently not in a session\n");
+    if (insession) {
+        fprintf(stderr, "Already in a session\n");
         return;
     }
 
