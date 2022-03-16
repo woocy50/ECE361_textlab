@@ -23,7 +23,7 @@ const char *JOINSESSION_CMD = "/joinsession";
 const char *LEAVESESSION_CMD = "/leavesession";
 const char *CREATESESSION_CMD = "/createsession";
 const char *LIST_CMD = "/list";
-const char *QUIT_CMD = "/quit";
+const char *QUIT_CMD = "/quit"; 
 
 void *get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
