@@ -12,7 +12,7 @@ struct user {
     char id[MAX_NAME];
     char pwd[MAX_NAME];
     int sockfd;
-    int sess;
+    char sess[MAX_NAME];
 };
 
 char* IDS[USRNUM] = {"aswadamoh", "woochang", "admin"};
