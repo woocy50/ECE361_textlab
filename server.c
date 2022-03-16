@@ -4,23 +4,12 @@
 // Adel Aswad 1005362466
 // Nick Woo 1002557271
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <stdbool.h>
-#include <pthread.h>
-
 #include "utils/parser.h"
+#include "utils/user.h"
 
 #define BACKLOG 10
+
+struct user users[USRNUM];
 
 void* receive(void* void_sockfd) {
     // handle various ACKs and messages from server
@@ -30,6 +19,7 @@ void* receive(void* void_sockfd) {
     struct message packet;
 
     char buf[BUF_SIZE];
+    int i, j, sess;
     while (true) {
         memset(buf, 0, BUF_SIZE);
         if ((numbytes = recv(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
@@ -42,14 +32,49 @@ void* receive(void* void_sockfd) {
         memset(packet.source, 0, MAX_NAME);
         memset(packet.data, 0, MAX_DATA);
         string2packet(buf, &packet);
-        printf("\ttype: %d\n\tsize: %d\n\tsource: %s\n\tdata: %s\n", packet.type, packet.size, packet.source, packet.data);
+        // printf("\ttype: %d\n\tsize: %d\n\tsource: %s\n\tdata: %s\n", packet.type, packet.size, packet.source, packet.data);
         switch(packet.type) {
             case LOGIN:
                 printf("LOGIN: %s\n", buf);
-                packet.type = LO_ACK;
-                strcpy(packet.source, "SERVER");
-                strcpy(packet.data, "login okay");
-                packet.size = strlen(packet.data);
+                for (i = 0; i < USRNUM; i++) {
+                    if (strcmp(users[i].id, packet.source) == 0) {
+                        if (strcmp(users[i].pwd, packet.data) == 0) {
+                            if (users[i].sockfd == -1){
+                                memset(packet.source, 0, MAX_NAME);
+                                memset(packet.data, 0, MAX_DATA);
+                                packet.type = LO_ACK;
+                                strcpy(packet.source, "SERVER");
+                                strcpy(packet.data, "login okay");
+                                packet.size = strlen(packet.data);
+
+                                users[i].sockfd = *sockfd;
+                            } else {
+                                memset(packet.source, 0, MAX_NAME);
+                                memset(packet.data, 0, MAX_DATA);
+                                packet.type = LO_NAK;
+                                strcpy(packet.source, "SERVER");
+                                strcpy(packet.data, "already logged in from another device");
+                                packet.size = strlen(packet.data);
+                            }
+                        } else {
+                            memset(packet.source, 0, MAX_NAME);
+                            memset(packet.data, 0, MAX_DATA);
+                            packet.type = LO_NAK;
+                            strcpy(packet.source, "SERVER");
+                            strcpy(packet.data, "wrong password");
+                            packet.size = strlen(packet.data);
+                        }
+                        break;
+                    }
+                }
+                if (i == USRNUM) {
+                    memset(packet.source, 0, MAX_NAME);
+                    memset(packet.data, 0, MAX_DATA);
+                    packet.type = LO_NAK;
+                    strcpy(packet.source, "SERVER");
+                    strcpy(packet.data, "id doesn't exist");
+                    packet.size = strlen(packet.data);
+                }
 
                 memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
@@ -61,14 +86,42 @@ void* receive(void* void_sockfd) {
             
             case EXIT:
                 printf("LOGOUT: %s\n", buf);
+                for (i = 0; i < USRNUM; i++) {
+                    if (users[i].sockfd == *sockfd) {
+                        users[i].sockfd = -1;
+                    }
+                }
                 break;
             
             case JOIN:
                 printf("JOIN: %s\n", buf);
-                packet.type = JN_ACK;
-                strcpy(packet.source, "SERVER");
-                strcpy(packet.data, "1");
-                packet.size = strlen(packet.data);
+                sess = atoi(packet.data);
+                for (i = 0; i < USRNUM; i++) {
+                    if (users[i].sockfd == *sockfd) {
+                        for (j = 0; j < USRNUM; j++) {
+                            if (users[j].sess == sess) {
+                                memset(packet.source, 0, MAX_NAME);
+                                memset(packet.data, 0, MAX_DATA);
+                                packet.type = JN_ACK;
+                                strcpy(packet.source, "SERVER");
+                                sprintf(packet.data, "session %d join okay", sess);
+                                packet.size = strlen(packet.data);
+
+                                users[i].sess = sess;
+                            }
+                            break;
+                        }
+                        if (j == USRNUM) {
+                            memset(packet.source, 0, MAX_NAME);
+                            memset(packet.data, 0, MAX_DATA);
+                            packet.type = JN_NAK;
+                            strcpy(packet.source, "SERVER");
+                            strcpy(packet.data, "session doesn't exist");
+                            packet.size = strlen(packet.data);
+                        }
+                        break;
+                    }
+                }
 
                 memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
@@ -80,14 +133,42 @@ void* receive(void* void_sockfd) {
             
             case LEAVE_SESS:
                 printf("LEAVE_SESS: %s\n", buf);
+                for (i = 0; i < USRNUM; i++) {
+                    if (users[i].sockfd == *sockfd) {
+                        users[i].sess = -1;
+                    }
+                }
                 break;
             
             case NEW_SESS:
-                printf("NEW_SESS: %s\n", buf);
-                packet.type = LO_ACK;
-                strcpy(packet.source, "SERVER");
-                strcpy(packet.data, "2");
-                packet.size = strlen(packet.data);
+                printf("CREATE_SESS: %s\n", buf);
+                sess = atoi(packet.data);
+                for (i = 0; i < USRNUM; i++) {
+                    if (users[i].sockfd == *sockfd) {
+                        for (j = 0; j < USRNUM; j++) {
+                            if (users[j].sess == sess) {
+                                memset(packet.source, 0, MAX_NAME);
+                                memset(packet.data, 0, MAX_DATA);
+                                packet.type = JN_NAK;
+                                strcpy(packet.source, "SERVER");
+                                strcpy(packet.data, "session already exists");
+                                packet.size = strlen(packet.data);
+                            }
+                            break;
+                        }
+                        if (j == USRNUM) {
+                            memset(packet.source, 0, MAX_NAME);
+                            memset(packet.data, 0, MAX_DATA);
+                            packet.type = NS_ACK;
+                            strcpy(packet.source, "SERVER");
+                            sprintf(packet.data, "session %d join okay", sess);
+                            packet.size = strlen(packet.data);
+
+                            users[i].sess = sess;
+                        }
+                        break;
+                    }
+                }
 
                 memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
@@ -99,17 +180,39 @@ void* receive(void* void_sockfd) {
             
             case MESSAGE:
                 printf("MESSAGE: %s\n", buf);
-                if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
-                    perror("send");
-                    return NULL;
+                for (i = 0; i < USRNUM; i++) {
+                    if (users[i].sockfd == *sockfd) {
+                        break;
+                    }
                 }
+                for (j = 0; j < USRNUM; j++) {
+                    if (users[j].sess == users[i].sess) {
+                        memset(packet.source, 0, MAX_NAME);
+                        strcpy(packet.source, users[i].id);
+
+                        memset(buf, 0, BUF_SIZE);
+                        packet2string(&packet, buf);
+                        if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                            perror("send");
+                            // return NULL;
+                        }
+                    }
+                }                
                 break;
             
             case QUERY:
                 printf("LIST: %s\n", buf);
+
+                memset(packet.source, 0, MAX_NAME);
+                memset(packet.data, 0, MAX_DATA);
                 packet.type = QU_ACK;
                 strcpy(packet.source, "SERVER");
-                strcpy(packet.data, "list results");
+                for (int i = 0; i < USRNUM; i++) {
+                    if (users[i].sockfd != -1) {
+                        sprintf(packet.data + strlen(packet.data), 
+                                "%-12s%d\n", users[i].id, users[i].sess);
+                    }
+                }
                 packet.size = strlen(packet.data);
 
                 memset(buf, 0, BUF_SIZE);
@@ -132,6 +235,14 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Invalid use\n");
         fprintf(stdout, "Usage: server <TCP port number>\n");
         exit(1);
+    }
+
+    // initialize users (hardcoded in user.h)
+    for (int i = 0; i < USRNUM; i++) {
+        strcpy(users[i].id, IDS[i]);
+        strcpy(users[i].pwd, PWDS[i]);
+        users[i].sockfd = -1;
+        users[i].sess = -1;
     }
 
     char* port = parsePort(argv[1]);
@@ -189,6 +300,7 @@ int main(int argc, char *argv[]) {
     }
     
     // ---------- server is now connected to server socket ----------
+    
     while (true) {
         sin_size = sizeof their_addr;
         clientfd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size);
@@ -201,8 +313,6 @@ int main(int argc, char *argv[]) {
         if (pthread_create(&recvthread, NULL, receive, &clientfd) == 0) {
             fprintf(stdout, "Client connected.\n");
         }
-        
-
 
     }
 

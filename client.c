@@ -4,20 +4,6 @@
 // Adel Aswad 1005362466
 // Nick Woo 1002557271
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <stdbool.h>
-#include <pthread.h>
-
 #include "utils/parser.h"
 
 const char* LOGIN_CMD = "/login";
@@ -68,7 +54,7 @@ void* receive(void* void_sockfd) {
                 insession = true;
                 break;
             case QU_ACK:
-                fprintf(stdout, "User id\t\tSession ids\n%s", packet.data);
+                fprintf(stdout, "User id     Session id\n%s", packet.data);
                 break;
             case MESSAGE:
                 fprintf(stdout, "%s:\t%s\n", packet.source, packet.data);
@@ -280,9 +266,18 @@ void createsession(int* sockfd) {
         return;
     }
 
+    char* session_id;
+    session_id = strtok(NULL, " ");
+    if (session_id == NULL) {
+        fprintf(stderr, "Invalid use\n");
+        fprintf(stdout, "Usage: /createsession <session_id>\n");
+        return;
+    }
+
     int numbytes;
     struct message packet;
     packet.type = NEW_SESS;
+    strncpy(packet.data, session_id, MAX_DATA);
     packet.size = 0;
     
     char buf[BUF_SIZE];

@@ -1,10 +1,23 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <stdbool.h>
+#include <pthread.h>
+
 #define MAX_NAME 100
 #define MAX_DATA 1000
 #define BUF_SIZE 2000
-#define USERS "userlist.txt"
 
 struct message {
     unsigned int type;
