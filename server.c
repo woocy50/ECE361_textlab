@@ -19,7 +19,8 @@ void* receive(void* void_sockfd) {
     struct message packet;
 
     char buf[BUF_SIZE];
-    int i, j, sess;
+    int i, j;
+	char* sess;
     while (true) {
         memset(buf, 0, BUF_SIZE);
         if ((numbytes = recv(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
@@ -83,7 +84,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-                    users[i].sess = -1;
+                    users[i].sess = "";
                 }
                 break;
             
@@ -92,26 +93,26 @@ void* receive(void* void_sockfd) {
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         users[i].sockfd = -1;
-                        users[i].sess = -1;
+                        users[i].sess = "";
                     }
                 }
                 break;
             
             case JOIN:
                 printf("JOIN: %s\n", buf);
-                sess = atoi(packet.data);
+                sess = strcpy(sess, packet.data);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         for (j = 0; j < USRNUM; j++) {
-                            if (users[j].sess == sess) {
+                            if (strcmp(users[j].sess, sess)==0) {
                                 memset(packet.source, 0, MAX_NAME);
                                 memset(packet.data, 0, MAX_DATA);
                                 packet.type = JN_ACK;
                                 strcpy(packet.source, "SERVER");
-                                sprintf(packet.data, "session %d join okay", sess);
+                                sprintf(packet.data, "session %s join okay", sess);
                                 packet.size = strlen(packet.data);
 
-                                users[i].sess = sess;
+                                users[i].sess = strcpy(users[i].sess, sess);
                                 break;
                             }
                         }
@@ -131,7 +132,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-                    users[i].sess = -1;
+                    users[i].sess = "";
                 }
                 break;
             
@@ -139,18 +140,18 @@ void* receive(void* void_sockfd) {
                 printf("LEAVE_SESS: %s\n", buf);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
-                        users[i].sess = -1;
+                        users[i].sess = "";
                     }
                 }
                 break;
             
             case NEW_SESS:
                 printf("CREATE_SESS: %s\n", buf);
-                sess = atoi(packet.data);
+                sess = strcpy(sess, packet.data);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         for (j = 0; j < USRNUM; j++) {
-                            if (users[j].sess == sess) {
+                            if (strcmp(users[j].sess, sess)==0) {
                                 memset(packet.source, 0, MAX_NAME);
                                 memset(packet.data, 0, MAX_DATA);
                                 packet.type = JN_NAK;
@@ -165,10 +166,10 @@ void* receive(void* void_sockfd) {
                             memset(packet.data, 0, MAX_DATA);
                             packet.type = NS_ACK;
                             strcpy(packet.source, "SERVER");
-                            sprintf(packet.data, "session %d join okay", sess);
+                            sprintf(packet.data, "session %s join okay", sess);
                             packet.size = strlen(packet.data);
 
-                            users[i].sess = sess;
+                            users[i].sess = strcpy(users[i].sess, sess);
                         }
                         break;
                     }
@@ -179,7 +180,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-                    users[i].sess = -1;
+                    users[i].sess = "";
                 }
                 break;
             
@@ -191,7 +192,7 @@ void* receive(void* void_sockfd) {
                     }
                 }
                 for (j = 0; j < USRNUM; j++) {
-                    if (users[j].sess == users[i].sess) {
+                    if (strcmp(users[j].sess, users[i].sess)==0) {
                         memset(packet.source, 0, MAX_NAME);
                         strcpy(packet.source, users[i].id);
 
@@ -200,7 +201,7 @@ void* receive(void* void_sockfd) {
                         if ((numbytes = send(users[j].sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                             perror("send");
                             users[j].sockfd = -1;
-                            users[j].sess = -1;
+                            users[j].sess = "";
                         }
                     }
                 }                
@@ -216,7 +217,7 @@ void* receive(void* void_sockfd) {
                 for (int i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd != -1) {
                         sprintf(packet.data + strlen(packet.data), 
-                                "%-12s%d\n", users[i].id, users[i].sess);
+                                "%-12s%s\n", users[i].id, users[i].sess);
                     }
                 }
                 packet.size = strlen(packet.data);
@@ -226,7 +227,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-                    users[i].sess = -1;
+                    users[i].sess = "";
                 }
                 break;
             
@@ -249,7 +250,7 @@ int main(int argc, char *argv[]) {
         strcpy(users[i].id, IDS[i]);
         strcpy(users[i].pwd, PWDS[i]);
         users[i].sockfd = -1;
-        users[i].sess = -1;
+        users[i].sess = "";
     }
 
     char* port = parsePort(argv[1]);
