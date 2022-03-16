@@ -40,6 +40,8 @@ void* receive(void* void_sockfd) {
         if (numbytes == 0) {continue;}
         buf[numbytes] = '\0';
         // printf("%s\n", buf);
+        memset(packet.source, 0, MAX_NAME);
+        memset(packet.data, 0, MAX_DATA);
         string2packet(buf, &packet);
         switch(packet.type) {
             case JN_ACK:
@@ -149,6 +151,8 @@ void login(int* sockfd, pthread_t* recvthread) {
     }
 
     buf[numbytes] = '\0';
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     string2packet(buf, &packet);
 
     if (packet.type == LO_ACK) {
@@ -176,6 +180,8 @@ void logout(int* sockfd, pthread_t* recvthread) {
 
     int numbytes;
     struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     packet.type = EXIT;
     packet.size = 0;
     
@@ -247,6 +253,8 @@ void leavesession(int* sockfd) {
 
     int numbytes;
     struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     packet.type = LEAVE_SESS;
     packet.size = 0;
     
@@ -305,6 +313,8 @@ void list(int* sockfd) {
 
     int numbytes;
     struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     packet.type = QUERY;
     packet.size = 0;
     

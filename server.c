@@ -92,6 +92,7 @@ void* receive(void* void_sockfd) {
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         users[i].sockfd = -1;
+                        users[i].sess = -1;
                     }
                 }
                 break;
