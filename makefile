@@ -19,10 +19,10 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 all: server client
 
 server: server.c $(OBJS)
-	gcc server.c $(OBJS) -o $@
+	gcc server.c $(OBJS) -o $@ -pthread
 
 client: client.c $(OBJS)
-	gcc client.c $(OBJS) -o $@
+	gcc client.c $(OBJS) -o $@ -pthread
 
 # Build step
 $(BUILD_DIR)/%.c.o: %.c
