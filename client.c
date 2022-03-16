@@ -11,8 +11,8 @@
 #include <string.h>
 #include <netdb.h>
 #include <sys/types.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <stdbool.h>
@@ -21,12 +21,12 @@
 #include "utils/parser.h"
 
 const char* LOGIN_CMD = "/login";
-const char *LOGOUT_CMD = "/logout";
-const char *JOINSESSION_CMD = "/joinsession";
-const char *LEAVESESSION_CMD = "/leavesession";
-const char *CREATESESSION_CMD = "/createsession";
-const char *LIST_CMD = "/list";
-const char *QUIT_CMD = "/quit";
+const char* LOGOUT_CMD = "/logout";
+const char* JOINSESSION_CMD = "/joinsession";
+const char* LEAVESESSION_CMD = "/leavesession";
+const char* CREATESESSION_CMD = "/createsession";
+const char* LIST_CMD = "/list";
+const char* QUIT_CMD = "/quit";
 bool insession = false;
 
 void *get_in_addr(struct sockaddr *sa) {
@@ -88,16 +88,15 @@ void login(int* sockfd, pthread_t* recvthread) {
     pwd = strtok(NULL, " ");
     ip = strtok(NULL, " ");
     port = strtok(NULL, " \n");
-    
     if (id == NULL || pwd == NULL || ip == NULL || port == NULL) {
         fprintf(stderr, "Invalid use\n");
         fprintf(stdout, "Usage: /login <id> <pwd> <ip> <port>\n");
         return;
-    } else if (*sockfd == -1) {
+    } else if (*sockfd != -1) {
         fprintf(stderr, "Already logged in\n");
         return;
     }
-
+    
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
@@ -110,7 +109,7 @@ void login(int* sockfd, pthread_t* recvthread) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return;
 	}
-
+    
 	for (p = servinfo; p != NULL; p = p->ai_next) {
 		if ((*sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
 			perror("client: socket");
@@ -124,7 +123,7 @@ void login(int* sockfd, pthread_t* recvthread) {
         }
 		break;
 	}
-
+    
     if (p == NULL) {
 		fprintf(stderr, "client: failed to create a socket\n");
         *sockfd = -1;
@@ -354,8 +353,8 @@ int main(int argc, char *argv[]) {
     char* input;
     while (true) {
         memset(inputbuf, 0, BUF_SIZE);
-        scanf("%[^\n]", inputbuf);
-
+        fgets(inputbuf, BUF_SIZE-1, stdin);
+        inputbuf[strcspn(inputbuf, "\n")] = '\0';
         if (*inputbuf == '/') {
             input = strtok(inputbuf, " ");
             if (strcmp(input, LOGIN_CMD) == 0) {
