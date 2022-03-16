@@ -39,6 +39,7 @@ void* receive(void* void_sockfd) {
         
         if (numbytes == 0) {continue;}
         buf[numbytes] = '\0';
+        // printf("%s\n", buf);
         string2packet(buf, &packet);
         switch(packet.type) {
             case JN_ACK:
@@ -122,9 +123,11 @@ void login(int* sockfd, pthread_t* recvthread) {
     // ---------- client is connected to server, now send LOGIN ----------
     int numbytes;
     struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     packet.type = LOGIN;
-    strncpy(packet.source, id, MAX_NAME);
-    strncpy(packet.data, pwd, MAX_DATA);
+    strncpy(packet.source, id, strlen(id));
+    strncpy(packet.data, pwd, strlen(pwd));
     packet.size = strlen(packet.data);
     
     char buf[BUF_SIZE];
@@ -216,8 +219,10 @@ void joinsession(int* sockfd) {
 
     int numbytes;
     struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     packet.type = JOIN;
-    strncpy(packet.data, session_id, MAX_DATA);
+    strncpy(packet.data, session_id, strlen(session_id));
     packet.size = strlen(packet.data);
     
     char buf[BUF_SIZE];
@@ -276,13 +281,16 @@ void createsession(int* sockfd) {
 
     int numbytes;
     struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     packet.type = NEW_SESS;
-    strncpy(packet.data, session_id, MAX_DATA);
-    packet.size = 0;
+    strncpy(packet.data, session_id, strlen(session_id));
+    packet.size = strlen(packet.data);
     
     char buf[BUF_SIZE];
     memset(buf, 0, BUF_SIZE);
     packet2string(&packet, buf);
+    printf("%s\n", buf);
     if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
         perror("send");
         return;
@@ -322,8 +330,10 @@ void send_text(int* sockfd, char* inputbuf) {
 
     int numbytes;
     struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
     packet.type = MESSAGE;
-    strncpy(packet.data, inputbuf, MAX_DATA);
+    strncpy(packet.data, inputbuf, strlen(inputbuf));
     packet.size = strlen(packet.data);
     
     char buf[BUF_SIZE];

@@ -14,7 +14,7 @@ struct user users[USRNUM];
 void* receive(void* void_sockfd) {
     // handle various ACKs and messages from server
 
-    int* sockfd = (int*) void_sockfd;
+    int sockfd = *(int*) void_sockfd;
     int numbytes;
     struct message packet;
 
@@ -22,11 +22,13 @@ void* receive(void* void_sockfd) {
     int i, j, sess;
     while (true) {
         memset(buf, 0, BUF_SIZE);
-        if ((numbytes = recv(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+        if ((numbytes = recv(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
             perror("recv");
             return NULL;
         }
         
+        // printf("%lu %d\n", pthread_self(), sockfd);
+
         if (numbytes == 0) {continue;}
         buf[numbytes] = '\0';
         memset(packet.source, 0, MAX_NAME);
@@ -47,7 +49,7 @@ void* receive(void* void_sockfd) {
                                 strcpy(packet.data, "login okay");
                                 packet.size = strlen(packet.data);
 
-                                users[i].sockfd = *sockfd;
+                                users[i].sockfd = sockfd;
                             } else {
                                 memset(packet.source, 0, MAX_NAME);
                                 memset(packet.data, 0, MAX_DATA);
@@ -78,16 +80,17 @@ void* receive(void* void_sockfd) {
 
                 memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
-                if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
-                    return NULL;
+                    users[i].sockfd = -1;
+                    users[i].sess = -1;
                 }
                 break;
             
             case EXIT:
                 printf("LOGOUT: %s\n", buf);
                 for (i = 0; i < USRNUM; i++) {
-                    if (users[i].sockfd == *sockfd) {
+                    if (users[i].sockfd == sockfd) {
                         users[i].sockfd = -1;
                     }
                 }
@@ -97,7 +100,7 @@ void* receive(void* void_sockfd) {
                 printf("JOIN: %s\n", buf);
                 sess = atoi(packet.data);
                 for (i = 0; i < USRNUM; i++) {
-                    if (users[i].sockfd == *sockfd) {
+                    if (users[i].sockfd == sockfd) {
                         for (j = 0; j < USRNUM; j++) {
                             if (users[j].sess == sess) {
                                 memset(packet.source, 0, MAX_NAME);
@@ -108,8 +111,8 @@ void* receive(void* void_sockfd) {
                                 packet.size = strlen(packet.data);
 
                                 users[i].sess = sess;
+                                break;
                             }
-                            break;
                         }
                         if (j == USRNUM) {
                             memset(packet.source, 0, MAX_NAME);
@@ -122,19 +125,19 @@ void* receive(void* void_sockfd) {
                         break;
                     }
                 }
-
                 memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
-                if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
-                    return NULL;
+                    users[i].sockfd = -1;
+                    users[i].sess = -1;
                 }
                 break;
             
             case LEAVE_SESS:
                 printf("LEAVE_SESS: %s\n", buf);
                 for (i = 0; i < USRNUM; i++) {
-                    if (users[i].sockfd == *sockfd) {
+                    if (users[i].sockfd == sockfd) {
                         users[i].sess = -1;
                     }
                 }
@@ -144,7 +147,7 @@ void* receive(void* void_sockfd) {
                 printf("CREATE_SESS: %s\n", buf);
                 sess = atoi(packet.data);
                 for (i = 0; i < USRNUM; i++) {
-                    if (users[i].sockfd == *sockfd) {
+                    if (users[i].sockfd == sockfd) {
                         for (j = 0; j < USRNUM; j++) {
                             if (users[j].sess == sess) {
                                 memset(packet.source, 0, MAX_NAME);
@@ -153,8 +156,8 @@ void* receive(void* void_sockfd) {
                                 strcpy(packet.source, "SERVER");
                                 strcpy(packet.data, "session already exists");
                                 packet.size = strlen(packet.data);
+                                break;
                             }
-                            break;
                         }
                         if (j == USRNUM) {
                             memset(packet.source, 0, MAX_NAME);
@@ -172,16 +175,17 @@ void* receive(void* void_sockfd) {
 
                 memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
-                if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
-                    return NULL;
+                    users[i].sockfd = -1;
+                    users[i].sess = -1;
                 }
                 break;
             
             case MESSAGE:
                 printf("MESSAGE: %s\n", buf);
                 for (i = 0; i < USRNUM; i++) {
-                    if (users[i].sockfd == *sockfd) {
+                    if (users[i].sockfd == sockfd) {
                         break;
                     }
                 }
@@ -192,9 +196,10 @@ void* receive(void* void_sockfd) {
 
                         memset(buf, 0, BUF_SIZE);
                         packet2string(&packet, buf);
-                        if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                        if ((numbytes = send(users[j].sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                             perror("send");
-                            // return NULL;
+                            users[j].sockfd = -1;
+                            users[j].sess = -1;
                         }
                     }
                 }                
@@ -217,9 +222,10 @@ void* receive(void* void_sockfd) {
 
                 memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
-                if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
-                    return NULL;
+                    users[i].sockfd = -1;
+                    users[i].sess = -1;
                 }
                 break;
             
@@ -311,7 +317,7 @@ int main(int argc, char *argv[]) {
 
         pthread_t recvthread;
         if (pthread_create(&recvthread, NULL, receive, &clientfd) == 0) {
-            fprintf(stdout, "Client connected.\n");
+            fprintf(stdout, "Client connected at pthread %lu\n", recvthread);
         }
 
     }
