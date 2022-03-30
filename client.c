@@ -73,9 +73,9 @@ void* receive(void* void_sockfd) {
                 fprintf(stdout, "Failed to send invitation\n");
 				break;
 			case INVITED:
-                fprintf(stdout, "Invited: %s\n", packet.data);
 				strcpy(inv_user, strtok(packet.data, ":"));
 				strcpy(inv_session, strtok(NULL, ":"));
+                fprintf(stdout, "<%s> invited you to <%s>\n", inv_user, inv_session);
                 break;
 			case INV_RES_ACK:
 				if(strlen(packet.data) == 0){

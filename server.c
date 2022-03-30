@@ -263,9 +263,9 @@ void* receive(void* void_sockfd) {
             
             case NEW_SESS:
                 printf("CREATE_SESS: %s\n", buf);
-		memset(sess, 0, MAX_NAME);
+				memset(sess, 0, MAX_NAME);
                 strcpy(sess, packet.data);
-		printf("sess = %s\n", sess);
+				//printf("sess = %s\n", sess);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         for (j = 0; j < USRNUM; j++) {
