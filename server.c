@@ -84,7 +84,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		    memset(users[i].sess, 0, MAX_NAME);
+		            memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -94,7 +94,7 @@ void* receive(void* void_sockfd) {
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         users[i].sockfd = -1;
-		        memset(users[i].sess, 0, MAX_NAME);
+		                memset(users[i].sess, 0, MAX_NAME);
                         // users[i].sess = "";
                     }
                 }
@@ -102,7 +102,7 @@ void* receive(void* void_sockfd) {
             
             case JOIN:
                 printf("JOIN: %s\n", buf);
-		memset(sess, 0, MAX_NAME);
+		        memset(sess, 0, MAX_NAME);
                 strcpy(sess, packet.data);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
@@ -116,7 +116,7 @@ void* receive(void* void_sockfd) {
                                 packet.size = strlen(packet.data);
 				
                                 memset(users[i].sess, 0, MAX_NAME);
-				strcpy(users[i].sess, sess);
+				                strcpy(users[i].sess, sess);
                                 break;
                             }
                         }
@@ -136,7 +136,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		    memset(users[i].sess, 0, MAX_NAME);
+		            memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -145,7 +145,7 @@ void* receive(void* void_sockfd) {
                 printf("LEAVE_SESS: %s\n", buf);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
-			memset(users[i].sess, 0, MAX_NAME);
+			            memset(users[i].sess, 0, MAX_NAME);
                         // users[i].sess = "";
                     }
                 }
@@ -153,9 +153,9 @@ void* receive(void* void_sockfd) {
             
             case NEW_SESS:
                 printf("CREATE_SESS: %s\n", buf);
-		memset(sess, 0, MAX_NAME);
+		        memset(sess, 0, MAX_NAME);
                 strcpy(sess, packet.data);
-		printf("sess = %s\n", sess);
+		        printf("sess = %s\n", sess);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         for (j = 0; j < USRNUM; j++) {
@@ -178,18 +178,18 @@ void* receive(void* void_sockfd) {
                             packet.size = strlen(packet.data);
 
                             memset(users[i].sess, 0, MAX_NAME);
-			    strcpy(users[i].sess, sess);
+			                strcpy(users[i].sess, sess);
                         }
                         break;
                     }
                 }
                 
-		memset(buf, 0, BUF_SIZE);
+		        memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		    memset(users[i].sess, 0, MAX_NAME);
+		            memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -238,7 +238,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		    memset(users[i].sess, 0, MAX_NAME);
+		            memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
