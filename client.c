@@ -19,7 +19,7 @@ bool insession = false;
 void* get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
         return &(((struct sockaddr_in*)sa)->sin_addr);
-	}
+    }
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
@@ -97,34 +97,34 @@ void login(int* sockfd, pthread_t* recvthread) {
     int rv;
     char s[INET6_ADDRSTRLEN];
     
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
 
     if ((rv = getaddrinfo(ip, port, &hints, &servinfo)) != 0) {
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-		return;
-	}
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        return;
+    }
     
-	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((*sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-			perror("client: socket");
-			continue;
-		}
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        if ((*sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+            perror("client: socket");
+            continue;
+        }
 
         if (connect(*sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(*sockfd);
             perror("client: connect");
             continue;
         }
-		break;
-	}
+        break;
+    }
     
     if (p == NULL) {
-		fprintf(stderr, "client: failed to create a socket\n");
+        fprintf(stderr, "client: failed to create a socket\n");
         *sockfd = -1;
-		return;
-	}
+        return;
+    }
 
     inet_ntop(p->ai_family, get_in_addr((struct sockaddr *) p->ai_addr), s, sizeof s);
     freeaddrinfo(servinfo);
@@ -391,8 +391,8 @@ void send_prv_text(int* sockfd, char* inputbuf) {
 }
 
 int main(int argc, char *argv[]) {
-	if (argc != 1) {
-		fprintf(stderr, "Invalid use\n");
+    if (argc != 1) {
+        fprintf(stderr, "Invalid use\n");
         fprintf(stdout, "Usage: client\n");
         exit(1);
     }

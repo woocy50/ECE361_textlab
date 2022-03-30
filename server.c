@@ -84,7 +84,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		            memset(users[i].sess, 0, MAX_NAME);
+                    memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -94,7 +94,7 @@ void* receive(void* void_sockfd) {
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         users[i].sockfd = -1;
-		                memset(users[i].sess, 0, MAX_NAME);
+                        memset(users[i].sess, 0, MAX_NAME);
                         // users[i].sess = "";
                     }
                 }
@@ -102,7 +102,7 @@ void* receive(void* void_sockfd) {
             
             case JOIN:
                 printf("JOIN: %s\n", buf);
-		        memset(sess, 0, MAX_NAME);
+                memset(sess, 0, MAX_NAME);
                 strcpy(sess, packet.data);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
@@ -114,9 +114,9 @@ void* receive(void* void_sockfd) {
                                 strcpy(packet.source, "SERVER");
                                 sprintf(packet.data, "session %s join okay", sess);
                                 packet.size = strlen(packet.data);
-				
+                
                                 memset(users[i].sess, 0, MAX_NAME);
-				                strcpy(users[i].sess, sess);
+                                strcpy(users[i].sess, sess);
                                 break;
                             }
                         }
@@ -136,7 +136,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		            memset(users[i].sess, 0, MAX_NAME);
+                    memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -145,7 +145,7 @@ void* receive(void* void_sockfd) {
                 printf("LEAVE_SESS: %s\n", buf);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
-			            memset(users[i].sess, 0, MAX_NAME);
+                        memset(users[i].sess, 0, MAX_NAME);
                         // users[i].sess = "";
                     }
                 }
@@ -153,9 +153,9 @@ void* receive(void* void_sockfd) {
             
             case NEW_SESS:
                 printf("CREATE_SESS: %s\n", buf);
-		        memset(sess, 0, MAX_NAME);
+                memset(sess, 0, MAX_NAME);
                 strcpy(sess, packet.data);
-		        printf("sess = %s\n", sess);
+                printf("sess = %s\n", sess);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
                         for (j = 0; j < USRNUM; j++) {
@@ -178,18 +178,18 @@ void* receive(void* void_sockfd) {
                             packet.size = strlen(packet.data);
 
                             memset(users[i].sess, 0, MAX_NAME);
-			                strcpy(users[i].sess, sess);
+                            strcpy(users[i].sess, sess);
                         }
                         break;
                     }
                 }
                 
-		        memset(buf, 0, BUF_SIZE);
+                memset(buf, 0, BUF_SIZE);
                 packet2string(&packet, buf);
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		            memset(users[i].sess, 0, MAX_NAME);
+                    memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -212,7 +212,7 @@ void* receive(void* void_sockfd) {
                             perror("send");
                             users[j].sockfd = -1;
                             memset(users[j].sess, 0, MAX_NAME);
-			    // users[j].sess = "";
+                // users[j].sess = "";
                         }
                     }
                 }                
@@ -238,7 +238,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		            memset(users[i].sess, 0, MAX_NAME);
+                    memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -298,8 +298,8 @@ void* receive(void* void_sockfd) {
 }
 
 int main(int argc, char *argv[]) {
-	if (argc != 2) {
-		fprintf(stderr, "Invalid use\n");
+    if (argc != 2) {
+        fprintf(stderr, "Invalid use\n");
         fprintf(stdout, "Usage: server <TCP port number>\n");
         exit(1);
     }
@@ -310,14 +310,14 @@ int main(int argc, char *argv[]) {
         strcpy(users[i].pwd, PWDS[i]);
         users[i].sockfd = -1;
         memset(users[i].sess, 0, MAX_NAME);
-	// users[i].sess = "";
+    // users[i].sess = "";
     }
 
     char* port = parsePort(argv[1]);
     if (port == 0){
-		fprintf(stderr, "Invalid use\n");
+        fprintf(stderr, "Invalid use\n");
         fprintf(stdout, "Usage: server <TCP port number>\n");
-	}
+    }
 
     int sockfd, clientfd;
     char buf[MAX_DATA];
@@ -333,8 +333,8 @@ int main(int argc, char *argv[]) {
     hints.ai_flags = AI_PASSIVE;
 
     if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
-		fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(rv));
-		return 1;
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(rv));
+        return 1;
     }
 
     for (p = servinfo; p != NULL; p = p->ai_next) {
