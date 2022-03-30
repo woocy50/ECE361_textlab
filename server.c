@@ -253,8 +253,15 @@ void* receive(void* void_sockfd) {
                 for (j = 0; j < USRNUM; j++) {
                     if (strcmp(packet.source, users[j].id) == 0) {
                         if (users[j].sockfd == -1) {
-                            // user hasn't logged in yet
-                            return NULL;
+                            memset(packet.data, 0, MAX_DATA);
+                            packet.type = PRV_MSG_NAK;
+                            strcpy(packet.data, "Recipient not logged in");
+
+                            memset(buf, 0, BUF_SIZE);
+                            packet2string(&packet, buf);
+                            if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                                perror("send");
+                            }
                         }
                         memset(packet.source, 0, MAX_NAME);
                         strcpy(packet.source, users[i].id);
@@ -262,13 +269,24 @@ void* receive(void* void_sockfd) {
                     }
                 }
                 if (j == USRNUM) {
-                    // no such recipient
-                    return NULL;
+                    memset(packet.data, 0, MAX_DATA);
+                    packet.type = PRV_MSG_NAK;
+                    strcpy(packet.data, "Recipient doesn't exist");
+
+                    memset(buf, 0, BUF_SIZE);
+                    packet2string(&packet, buf);
+                    if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                        perror("send");
+                    }
+                    break;
                 }
-                memset(buf, 0, BUF_SIZE);
-                packet2string(&packet, buf);
-                if ((numbytes = send(users[j].sockfd, buf, BUF_SIZE-1, 0)) == -1) {
-                    perror("send");
+
+                if (packet.type == PRV_MSG) {
+                    memset(buf, 0, BUF_SIZE);
+                    packet2string(&packet, buf);
+                    if ((numbytes = send(users[j].sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                        perror("send");
+                    }
                 }
                 break;
             

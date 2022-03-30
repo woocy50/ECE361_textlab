@@ -66,6 +66,9 @@ void* receive(void* void_sockfd) {
             case PRV_MSG:
                 fprintf(stdout, "(private) %s:\t%s\n", packet.source, packet.data);
                 break;
+            case PRV_MSG_NAK:
+                fprintf(stdout, "Private message to %s failed: %s\n", packet.source, packet.data);
+                break;
             default:
                 fprintf(stderr, "Unexpected packet %s\n", buf);
                 close(*sockfd);
