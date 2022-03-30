@@ -28,6 +28,7 @@ struct message {
 
 enum mtype {LOGIN, LO_ACK, LO_NAK, EXIT, JOIN, JN_ACK, JN_NAK, 
             LEAVE_SESS, NEW_SESS, NS_ACK, MESSAGE, QUERY, QU_ACK,
+			INVITE, INV_ACK, INV_NAK, INVITED, INV_ACPT, INV_DECL, INV_RES_ACK, INV_RES_NAK,
             PRV_MSG, PRV_MSG_NAK};
 
 char* parsePort(char*);
