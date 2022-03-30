@@ -1,5 +1,5 @@
-// ECE361 Text Conferencing Lab 1
-// Submitted on Mar 15, 2022
+// ECE361 Text Conferencing Lab 2
+// Submitted on Mar 30, 2022
 // Group 42
 // Adel Aswad 1005362466
 // Nick Woo 1002557271
@@ -13,9 +13,11 @@ const char* LEAVESESSION_CMD = "/leavesession";
 const char* CREATESESSION_CMD = "/createsession";
 const char* LIST_CMD = "/list";
 const char* QUIT_CMD = "/quit";
+const char* PRVMSG_CMD = "/dm";
 const char* INVITE_CMD = "/invite";
 const char* ACPT_INV_CMD = "/accept";
 const char* DECL_INV_CMD = "/decline";
+bool insession = false;
 char curr_session[MAX_NAME];
 char inv_session[MAX_NAME];
 char inv_user[MAX_NAME];
@@ -65,6 +67,12 @@ void* receive(void* void_sockfd) {
                 break;
             case MESSAGE:
                 fprintf(stdout, "%s:\t%s\n", packet.source, packet.data);
+                break;
+            case PRV_MSG:
+                fprintf(stdout, "(private) %s:\t%s\n", packet.source, packet.data);
+                break;
+            case PRV_MSG_NAK:
+                fprintf(stdout, "Private message to %s failed: %s\n", packet.source, packet.data);
                 break;
             case INV_ACK:
                 fprintf(stdout, "Invition sent!\n");
@@ -385,11 +393,40 @@ void send_text(int* sockfd, char* inputbuf) {
     }
 }
 
+void send_prv_text(int* sockfd, char* inputbuf) {
+    if (*sockfd == -1) {
+        fprintf(stderr, "Currently logged out\n");
+        return;
+    }
+
+    char *recipient, *msg;
+    recipient = strtok(NULL, " ");
+    msg = strtok(NULL, "\n");
+
+    int numbytes;
+    struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
+    strncpy(packet.source, recipient, strlen(recipient));
+    packet.type = PRV_MSG;
+    strncpy(packet.data, msg, strlen(msg));
+    packet.size = strlen(packet.data);
+    
+    char buf[BUF_SIZE];
+    memset(buf, 0, BUF_SIZE);
+    packet2string(&packet, buf);
+    if ((numbytes = send(*sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+        perror("send");
+        return;
+    }
+}
+
 void invite(int* sockfd){
     if (*sockfd == -1) {
         fprintf(stderr, "Currently logged out\n");
         return;
     }
+
 
     char* target_id = strtok(NULL, " ");
     if(target_id == NULL) {
@@ -512,6 +549,8 @@ int main(int argc, char *argv[]) {
             } else if (strcmp(input, QUIT_CMD) == 0) {
                 logout(&sockfd, &recvthread);
                 break;
+            } else if (strcmp(input, PRVMSG_CMD) == 0) {
+                send_prv_text(&sockfd, inputbuf);
             }
         } else {
             send_text(&sockfd, inputbuf);
