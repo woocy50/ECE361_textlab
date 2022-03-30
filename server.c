@@ -242,6 +242,35 @@ void* receive(void* void_sockfd) {
                     // users[i].sess = "";
                 }
                 break;
+
+            case PRV_MSG:
+                printf("PRIVATE MESSAGE: %s\n", buf);
+                for (i = 0; i < USRNUM; i++) {
+                    if (users[i].sockfd == sockfd) {
+                        break;
+                    }
+                }
+                for (j = 0; j < USRNUM; j++) {
+                    if (strcmp(packet.source, users[j].id) == 0) {
+                        if (users[j].sockfd == -1) {
+                            // user hasn't logged in yet
+                            return NULL;
+                        }
+                        memset(packet.source, 0, MAX_NAME);
+                        strcpy(packet.source, users[i].id);
+                        break;
+                    }
+                }
+                if (j == USRNUM) {
+                    // no such recipient
+                    return NULL;
+                }
+                memset(buf, 0, BUF_SIZE);
+                packet2string(&packet, buf);
+                if ((numbytes = send(users[j].sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                    perror("send");
+                }
+                break;
             
             default:
                 fprintf(stderr, "Unexpected packet %s\n", buf);
