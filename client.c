@@ -1,5 +1,5 @@
-// ECE361 Text Conferencing Lab 1
-// Submitted on Mar 15, 2022
+// ECE361 Text Conferencing Lab 2
+// Submitted on Mar 30, 2022
 // Group 42
 // Adel Aswad 1005362466
 // Nick Woo 1002557271
