@@ -84,7 +84,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		    memset(users[i].sess, 0, MAX_NAME);
+					memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -99,10 +99,120 @@ void* receive(void* void_sockfd) {
                     }
                 }
                 break;
+
+			case INVITE: {
+                printf("INVITE: %s\n", buf);
+				char *target_id = strtok(packet.data, ":");
+				char *target_sess = strtok(NULL, ":");
+				int target_num = -1;
+                for (i = 0; i < USRNUM; i++) {
+					if(strcmp(users[i].id, target_id) == 0){
+						target_num = i;
+						break;
+					}
+				}
+				struct message sender_res;
+				struct message recver_res;
+				if(target_num == -1){
+					sender_res.type = INV_NAK;
+					strcpy(sender_res.data, "");
+				} else {
+					// sender response
+					sender_res.type = INV_ACK;
+					sprintf(sender_res.data, "%s:%s", target_id, target_sess); // confirm target and sess
+
+					// target invitation
+					recver_res.type = INVITED;
+					sprintf(recver_res.data, "%s:%s", packet.source, target_sess); // send user & sess to invited user
+					recver_res.size = strlen(recver_res.data);
+					strcpy(recver_res.source, "SERVER");
+
+					memset(buf, 0, BUF_SIZE);
+					packet2string(&recver_res, buf);
+					int target_socket = users[target_num].sockfd;
+					if ((numbytes = send(target_socket, buf, BUF_SIZE-1, 0)) == -1) {
+						perror("send");
+					}
+						
+				}
+				strcpy(sender_res.source, "SERVER");
+				sender_res.size = strlen(sender_res.data);
+
+				memset(buf, 0, BUF_SIZE);
+				packet2string(&sender_res, buf);
+                if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+                    perror("send");
+				}
+			} break;
+
+			case INV_ACPT: {
+                printf("INV_ACPT: %s\n", buf);
+				char *inviter = strtok(packet.data, ":");
+				char *target_sess = strtok(NULL, ":");
+				char *target_id = packet.source;
+                //printf("target: %s, sess: %s, inviter: %s\n", target_id, target_sess, inviter);
+				int target_num = -1;
+				int inviter_num = -1;
+				bool sess_exists = false;
+                for (i = 0; i < USRNUM; i++) {
+					if(target_num == -1 && strcmp(users[i].id, target_id) == 0){
+						target_num = i;
+					}
+					if(inviter_num == -1 && strcmp(users[i].id, inviter) == 0){
+						inviter_num = i;
+					}
+					if(strcmp(users[i].sess, target_sess) == 0){
+						sess_exists = true;
+					}
+				}
+				struct message res;
+				strcpy(res.source, "SERVER");
+				if (!sess_exists || target_num == -1) {
+					res.type = INV_RES_NAK;
+					strcpy(res.data, "");
+					res.size = 0;
+
+					memset(buf, 0, BUF_SIZE);
+					packet2string(&res, buf);
+					if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+						perror("send");
+						break;
+					}
+
+				} else {
+					res.type = INV_RES_ACK;
+					strcpy(res.data, target_sess);
+					res.size = strlen(target_sess);
+
+					memset(buf, 0, BUF_SIZE);
+					packet2string(&res, buf);
+					if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+						perror("send");
+						break;
+					}
+					strcpy(users[target_num].sess, target_sess);
+				}
+			} break;
+			case INV_DECL: {
+                printf("INV_DECL: %s\n", buf);
+
+				struct message res;
+				strcpy(res.source, "SERVER");
+				res.type = INV_RES_ACK;
+				strcpy(res.data, "");
+				res.size = 0;
+
+				memset(buf, 0, BUF_SIZE);
+				packet2string(&res, buf);
+				if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
+					perror("send");
+					break;
+				}
+			} break;
             
             case JOIN:
                 printf("JOIN: %s\n", buf);
-		memset(sess, 0, MAX_NAME);
+				memset(sess, 0, MAX_NAME);
                 strcpy(sess, packet.data);
                 for (i = 0; i < USRNUM; i++) {
                     if (users[i].sockfd == sockfd) {
@@ -116,7 +226,7 @@ void* receive(void* void_sockfd) {
                                 packet.size = strlen(packet.data);
 				
                                 memset(users[i].sess, 0, MAX_NAME);
-				strcpy(users[i].sess, sess);
+								strcpy(users[i].sess, sess);
                                 break;
                             }
                         }
@@ -136,7 +246,7 @@ void* receive(void* void_sockfd) {
                 if ((numbytes = send(sockfd, buf, BUF_SIZE-1, 0)) == -1) {
                     perror("send");
                     users[i].sockfd = -1;
-		    memset(users[i].sess, 0, MAX_NAME);
+					memset(users[i].sess, 0, MAX_NAME);
                     // users[i].sess = "";
                 }
                 break;
@@ -178,7 +288,7 @@ void* receive(void* void_sockfd) {
                             packet.size = strlen(packet.data);
 
                             memset(users[i].sess, 0, MAX_NAME);
-			    strcpy(users[i].sess, sess);
+							strcpy(users[i].sess, sess);
                         }
                         break;
                     }

@@ -13,7 +13,13 @@ const char* LEAVESESSION_CMD = "/leavesession";
 const char* CREATESESSION_CMD = "/createsession";
 const char* LIST_CMD = "/list";
 const char* QUIT_CMD = "/quit";
-bool insession = false;
+const char* INVITE_CMD = "/invite";
+const char* ACPT_INV_CMD = "/accept";
+const char* DECL_INV_CMD = "/decline";
+char curr_session[MAX_NAME];
+char inv_session[MAX_NAME];
+char inv_user[MAX_NAME];
+char user_id[MAX_NAME];
 
 void* get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
@@ -46,15 +52,13 @@ void* receive(void* void_sockfd) {
         switch(packet.type) {
             case JN_ACK:
                 fprintf(stdout, "Join session successful\n");
-                insession = true;
                 break;
             case JN_NAK:
                 fprintf(stdout, "Join session failed\n");
-                insession = false;
+				strcpy(curr_session, "");
                 break;
             case NS_ACK:
                 fprintf(stdout, "Create session successful\n");
-                insession = true;
                 break;
             case QU_ACK:
                 fprintf(stdout, "User id     Session id\n%s", packet.data);
@@ -62,10 +66,30 @@ void* receive(void* void_sockfd) {
             case MESSAGE:
                 fprintf(stdout, "%s:\t%s\n", packet.source, packet.data);
                 break;
+			case INV_ACK:
+                fprintf(stdout, "Invition sent!\n");
+				break;
+			case INV_NAK:
+                fprintf(stdout, "Failed to send invitation\n");
+				break;
+			case INVITED:
+                fprintf(stdout, "Invited: %s\n", packet.data);
+				strcpy(inv_user, strtok(packet.data, ":"));
+				strcpy(inv_session, strtok(NULL, ":"));
+                break;
+			case INV_RES_ACK:
+				if(strlen(packet.data) == 0){
+					fprintf(stdout, "Declined Invitation\n");
+				} else{
+					fprintf(stdout, "Left session: %s\nJoined session: %s\n", curr_session, packet.data);
+					strcpy(curr_session, packet.data);
+				}
+				break;
+			case INV_RES_NAK:
+                fprintf(stdout, "Failed to accept invite\n");
+				break;
             default:
                 fprintf(stderr, "Unexpected packet %s\n", buf);
-                close(*sockfd);
-                *sockfd = -1;
                 return NULL;
         }
     }
@@ -158,6 +182,7 @@ void login(int* sockfd, pthread_t* recvthread) {
     if (packet.type == LO_ACK) {
         if (pthread_create(recvthread, NULL, receive, sockfd) == 0) {
             fprintf(stdout, "Login successful.\n");
+			strcpy(user_id, id);
         }
     } else if (packet.type == LO_NAK) {
         fprintf(stdout, "Login failed: %s\n", packet.data);
@@ -198,7 +223,7 @@ void logout(int* sockfd, pthread_t* recvthread) {
         return;
     }
 
-    insession = false;
+	strcpy(curr_session, "");
     close(*sockfd);
     *sockfd = -1;
     fprintf(stdout, "Logout successful\n");
@@ -210,7 +235,7 @@ void joinsession(int* sockfd) {
         return;
     }
     
-    if (insession) {
+    if (strlen(curr_session) != 0) {
         fprintf(stderr, "Currently in a session\n");
         return;
     }
@@ -238,6 +263,8 @@ void joinsession(int* sockfd) {
         perror("send");
         return;
     }
+
+	strcpy(curr_session, session_id);
 }
 
 void leavesession(int* sockfd) {
@@ -246,7 +273,7 @@ void leavesession(int* sockfd) {
         return;
     }
     
-    if (!insession) {
+    if (strlen(curr_session) == 0) {
         fprintf(stderr, "Currently not in a session\n");
         return;
     }
@@ -265,7 +292,8 @@ void leavesession(int* sockfd) {
         perror("send");
         return;
     }
-    insession = false;
+
+	strcpy(curr_session, "");
 }
 
 void createsession(int* sockfd) {
@@ -274,7 +302,7 @@ void createsession(int* sockfd) {
         return;
     }
     
-    if (insession) {
+    if (strlen(curr_session) != 0) {
         fprintf(stderr, "Already in a session\n");
         return;
     }
@@ -303,6 +331,8 @@ void createsession(int* sockfd) {
         perror("send");
         return;
     }
+
+	strcpy(curr_session, session_id);
 }
 
 void list(int* sockfd) {
@@ -333,7 +363,7 @@ void send_text(int* sockfd, char* inputbuf) {
         return;
     }
     
-    if (!insession) {
+    if (strlen(curr_session) == 0) {
         fprintf(stderr, "Currently not in a session\n");
         return;
     }
@@ -353,6 +383,95 @@ void send_text(int* sockfd, char* inputbuf) {
         perror("send");
         return;
     }
+}
+
+void invite(int* sockfd){
+    if (*sockfd == -1) {
+        fprintf(stderr, "Currently logged out\n");
+        return;
+    }
+
+	char* target_id = strtok(NULL, " ");
+	if(target_id == NULL) {
+		fprintf(stderr, "Invalid use\n");
+		fprintf(stderr, "Usage: /invite <user_id>\n");
+		return;
+	}
+
+	int size;
+	struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
+    packet.type = INVITE;
+	sprintf((char*) &packet.data[0], "%s:%s", target_id, curr_session); // not necessary to convert to char*
+	packet.size = strlen(packet.data);
+	strcpy(packet.source, user_id);
+	
+	char* buf = (char *) calloc(BUF_SIZE, sizeof(char));
+	packet2string(&packet, buf);
+	if(send(*sockfd, buf, BUF_SIZE-1, 0) == -1){
+		perror("send");
+		return;
+	}
+}
+
+void acceptinvite(int* sockfd) {
+    if (*sockfd == -1) {
+        fprintf(stderr, "Currently logged out\n");
+        return;
+    }
+	if (strlen(inv_session) == 0){
+        fprintf(stderr, "No invites pending\n");
+        return;
+	}
+
+	int size;
+	struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
+	sprintf((char*) &packet.data[0], "%s:%s", inv_user, inv_session); // not necessary to convert to char*
+	strcpy(packet.source, user_id);
+    packet.type = INV_ACPT;
+	packet.size = strlen(packet.data);
+	
+	char* buf = (char *) calloc(BUF_SIZE, sizeof(char));
+	packet2string(&packet, buf);
+	if(send(*sockfd, buf, BUF_SIZE-1, 0) == -1){
+		perror("send");
+		return;
+	}
+
+	strcpy(inv_session, "");
+	strcpy(inv_user, "");
+}
+
+void declineinvite(int* sockfd) {
+    if (*sockfd == -1) {
+        fprintf(stderr, "Currently logged out\n");
+        return;
+    }
+	if (strlen(inv_session) == 0){
+        fprintf(stderr, "No invites pending\n");
+        return;
+	}
+
+	int size;
+	struct message packet;
+    memset(packet.source, 0, MAX_NAME);
+    memset(packet.data, 0, MAX_DATA);
+	sprintf((char*) &packet.data[0], "%s:%s", inv_user, inv_session); // not necessary to convert to char*
+    packet.type = INV_DECL;
+	packet.size = strlen(packet.data);
+	
+	char* buf = (char *) calloc(BUF_SIZE, sizeof(char));
+	packet2string(&packet, buf);
+	if(send(*sockfd, buf, BUF_SIZE-1, 0) == -1){
+		perror("send");
+		return;
+	}
+
+	strcpy(inv_session, "");
+	strcpy(inv_user, "");
 }
 
 int main(int argc, char *argv[]) {
@@ -384,6 +503,12 @@ int main(int argc, char *argv[]) {
                 createsession(&sockfd);
             } else if (strcmp(input, LIST_CMD) == 0) {
                 list(&sockfd);
+            } else if (strcmp(input, INVITE_CMD) == 0) {
+                invite(&sockfd);
+            } else if (strcmp(input, ACPT_INV_CMD) == 0) {
+                acceptinvite(&sockfd);
+            } else if (strcmp(input, DECL_INV_CMD) == 0) {
+                declineinvite(&sockfd);
             } else if (strcmp(input, QUIT_CMD) == 0) {
                 logout(&sockfd, &recvthread);
                 break;
